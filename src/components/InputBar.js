@@ -2,7 +2,7 @@ import {StyleSheet, View, TextInput, Pressable, Text} from 'react-native';
 import React from 'react';
 import {colors} from '../utils/constants';
 
-const InputBar = ({value, setValue, onReset}) => {
+const InputBar = ({value, setValue, onReset, maxLength}) => {
   return (
     <View style={styles.container}>
       <TextInput
@@ -16,6 +16,7 @@ const InputBar = ({value, setValue, onReset}) => {
         value={value}
         onChangeText={setValue}
         textAlign="center"
+        maxLength={maxLength}
       />
       <Pressable style={styles.reset} onPress={onReset}>
         <Text style={styles.text}>Reset</Text>

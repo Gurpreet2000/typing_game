@@ -2,28 +2,65 @@ import {StyleSheet, SafeAreaView, Text, View} from 'react-native';
 import React, {useEffect, useState, useRef} from 'react';
 import {colors} from './src/utils/constants';
 import GameCard from './src/components/GameCard';
+import Timer from './src/components/Timer';
 import InputBar from './src/components/InputBar';
+
+const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const GUESS_LENGTH = 20;
 
 const App = () => {
   const [text, setText] = useState('');
-  const [timer, setTimer] = useState(0);
-
-  const startTime = useRef();
+  const [time, setTime] = useState(0);
+  const [timerIsRunning, setTimerIsRunning] = useState(false);
+  const [resetTimer, setResetTimer] = useState(false);
+  const [bestTime, setBestTime] = useState(0);
+  const [gameCardText, setGameCardText] = useState('');
 
   useEffect(() => {
-    startTime.current = new Date().getTime();
-
-    const interval = setInterval(() => {
-      const milliSecDiff = new Date().getTime() - startTime.current;
-      setTimer(milliSecDiff / 1000);
-    }, 1);
-
-    return () => clearInterval(interval);
+    startGame();
+    return () => stopGame();
   }, []);
 
-  const reset = () => {
-    startTime.current = new Date().getTime();
+  useEffect(() => {
+    if (text.length === GUESS_LENGTH) {
+      stopGame();
+    } else {
+      shuffleCharacter();
+    }
+  }, [text]);
+
+  const shuffleCharacter = () => {
+    setGameCardText(CHARACTERS[Math.floor(Math.random() * 26)]);
+  };
+
+  const startGame = () => {
+    setTimerIsRunning(true);
+    shuffleCharacter();
+  };
+
+  const stopGame = () => {
+    setTimerIsRunning(false);
+  };
+
+  const resetGame = () => {
     setText('');
+    setResetTimer(!resetTimer);
+    shuffleCharacter();
+  };
+
+  const onTimerStop = time => {
+    if (time < bestTime || bestTime === 0) {
+      setBestTime(time);
+      setGameCardText('Success');
+    } else setGameCardText('Failure');
+  };
+
+  const onTextInput = e => {
+    const str = (e.length > 1 ? e[e.length - 1] : e).toUpperCase();
+    if (e.length < text.length) return;
+    if (str !== gameCardText) {
+      setTime(time + 0.5);
+    } else setText(e.toUpperCase());
   };
 
   return (
@@ -38,14 +75,29 @@ const App = () => {
         </View>
 
         {/* Game Card */}
-        <GameCard />
+        <GameCard text={gameCardText} />
 
         {/* Footer Time */}
         <View>
-          <Text style={[styles.text, styles.time]}>Time : {timer}s</Text>
+          <Timer
+            onStop={onTimerStop}
+            reset={resetTimer}
+            isRunning={timerIsRunning}
+            setIsRunning={setTimerIsRunning}
+            value={time}
+            setValue={setTime}
+          />
+          <Text style={[styles.text, styles.bestTime]}>
+            my best time : {bestTime}s
+          </Text>
         </View>
       </View>
-      <InputBar value={text} setValue={setText} onReset={reset} />
+      <InputBar
+        value={text}
+        setValue={onTextInput}
+        onReset={resetGame}
+        maxLength={GUESS_LENGTH}
+      />
     </SafeAreaView>
   );
 };
@@ -72,7 +124,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 27,
   },
-  time: {
-    fontWeight: 'bold',
+  bestTime: {
+    opacity: 0.75,
   },
 });
